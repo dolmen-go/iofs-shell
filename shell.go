@@ -22,6 +22,7 @@ import (
 //   - escape: leave a subdirectory
 //   - right, left arrow: enter/leave a subdirectory
 //   - up, down arrow: navigate the file list of the current directory
+//   - g, G: go to top/bottom
 func Browse(fs iofs.FS, cwd string) error {
 	if !iofs.ValidPath(cwd) {
 		return &iofs.PathError{Path: cwd, Op: "open", Err: iofs.ErrInvalid}
