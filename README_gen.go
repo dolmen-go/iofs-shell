@@ -21,11 +21,17 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"go/doc"
+	"go/parser"
+	"go/printer"
+	"go/token"
 	"log"
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 )
 
 // This is a silly README generator that just does
@@ -44,13 +50,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pkg := string(pkgBytes)
-	name := path.Base(pkg)
-
-	cmd = exec.Command(goCmd, "doc", ".")
-	if cmd.Err != nil {
-		log.Fatal(cmd.Err)
-	}
+	packagePath := strings.TrimSpace(string(pkgBytes))
+	name := path.Base(packagePath)
+	// TODO follow import rules
+	pkgName := strings.TrimSuffix(strings.TrimPrefix(name, "go-"), "-go")
+	parts := strings.Split(pkgName, "-")
+	pkgName = parts[len(parts)-1]
 
 	f, err := os.Create("README.md")
 	if err != nil {
@@ -64,14 +69,85 @@ func main() {
 		"# %s\n"+
 		"[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/%s)\n"+
 		"[![Go Report Card](https://goreportcard.com/badge/%s)](https://goreportcard.com/report/%s)\n"+
-		"```\n",
-		name, pkg, pkg, pkg,
+		"\n",
+		name, packagePath, packagePath, packagePath,
 	)
 
-	cmd.Stdout = f
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, ".", nil, parser.ParseComments)
+	if err != nil {
+		log.Fatalf("Error parsing directory: %v", err)
 	}
 
-	fmt.Fprintln(f, "```")
+	var pkg *doc.Package
+	for _, p := range pkgs {
+		if p.Name == pkgName {
+			pkg = doc.New(p, packagePath, 0)
+			break
+		}
+	}
+
+	f.Write(pkg.Markdown(pkg.Doc))
+	f.WriteString("\n\n")
+
+	var buf bytes.Buffer
+
+	/*
+		for _, c := range pkg.Consts {
+			doc.ToText(&buf, fmt.Sprintf("const (%s)", c.Doc), "        ", "", 80)
+			for _, n := range c.Names {
+				buf.WriteString(fmt.Sprintf("\n%s", n))
+			}
+			buf.WriteString("\n\n")
+		}
+
+		for _, t := range pkg.Types {
+			doc.ToText(&buf, fmt.Sprintf("type %s %s", t.Name, t.Doc), "        ", "", 80)
+			for _, c := range t.Consts {
+				doc.ToText(&buf, fmt.Sprintf("const (%s)", c.Doc), "        ", "", 80)
+				for _, n := range c.Names {
+					buf.WriteString(fmt.Sprintf("\n%s", n))
+				}
+				buf.WriteString("\n\n")
+			}
+
+			for _, v := range t.Vars {
+				doc.ToText(&buf, fmt.Sprintf("var (%s)", v.Doc), "        ", "", 80)
+				for _, n := range v.Names {
+					buf.WriteString(fmt.Sprintf("\n%s", n))
+				}
+				buf.WriteString("\n\n")
+			}
+
+			for _, f := range t.Funcs {
+				buf.Write(pkg.Markdown(f.Doc))
+				fmt.Fprintf("## `func %s`\n\n%s", f.Name, f.Doc), "        ", "", 80)
+				buf.WriteString("\n\n")
+			}
+
+			for _, m := range t.Methods {
+				doc.ToText(&buf, fmt.Sprintf("func (%s) %s %s", m.Recv, m.Name, m.Doc), "        ", "", 80)
+				buf.WriteString("\n\n")
+			}
+
+		}
+
+		for _, v := range pkg.Vars {
+			doc.ToText(&buf, fmt.Sprintf("var (%s)", v.Doc), "        ", "", 80)
+			for _, n := range v.Names {
+				buf.WriteString(fmt.Sprintf("\n%s", n))
+			}
+			buf.WriteString("\n\n")
+		}
+	*/
+
+	for _, f := range pkg.Funcs {
+		buf.WriteString("## `")
+		printer.Fprint(&buf, fset, f.Decl)
+		buf.WriteString("`\n")
+		buf.Write(pkg.Markdown(f.Doc))
+		buf.WriteString("\n\n")
+	}
+
+	fmt.Fprintln(f, buf.String())
 }
