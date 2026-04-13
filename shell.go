@@ -10,8 +10,8 @@ import (
 	iofs "io/fs"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/filepicker"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/filepicker"
+	tea "charm.land/bubbletea/v2"
 )
 
 // Browse opens a terminal-based interactive browser that allows to navigate
@@ -87,9 +87,9 @@ func (b browser) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return b, cmd
 }
 
-func (b browser) View() string {
+func (b browser) View() tea.View {
 	var w strings.Builder
 	fmt.Fprintf(&w, "\n%s\n\n", b.filepicker.CurrentDirectory)
 	fmt.Fprintln(&w, b.filepicker.View())
-	return w.String()
+	return tea.NewView(w.String())
 }

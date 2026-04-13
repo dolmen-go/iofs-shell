@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/charmbracelet/bubbles/filepicker"
+	"charm.land/bubbles/v2/filepicker"
 )
 
 func TestDumpDefaultKeyMap(t *testing.T) {
@@ -12,7 +12,7 @@ func TestDumpDefaultKeyMap(t *testing.T) {
 
 	tkm := reflect.TypeOf(km)
 	vkm := reflect.ValueOf(km)
-	for i := 0; i < tkm.NumField(); i++ {
+	for i := range tkm.NumField() {
 		t.Logf("%s: %v", tkm.Field(i).Name, vkm.Field(i))
 	}
 }
