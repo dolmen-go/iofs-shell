@@ -32,6 +32,6 @@ func run(args []string) error {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	ar := sqlarfs.New(db, sqlarfs.PermOwner)
+	ar := sqlarfs.New(db.Query, sqlarfs.PermOwner)
 	return shell.Browse(ar, ".")
 }

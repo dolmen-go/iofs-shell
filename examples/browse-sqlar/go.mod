@@ -4,8 +4,8 @@ go 1.25.9
 
 require (
 	github.com/dolmen-go/iofs-shell v0.0.0
-	github.com/dolmen-go/sqlar v0.2.1
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/dolmen-go/sqlar v0.3.0
+	github.com/mattn/go-sqlite3 v1.14.32
 )
 
 require (
